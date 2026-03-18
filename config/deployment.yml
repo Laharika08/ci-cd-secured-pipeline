@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-ci-cd-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: secure-ci-cd
+  template:
+    metadata:
+      labels:
+        app: secure-ci-cd
+    spec:
+      containers:
+      - name: app
+        image: secure-ci-cd-app:v1
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
