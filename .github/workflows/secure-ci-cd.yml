@@ -26,7 +26,6 @@ jobs:
           python-version: "3.11"
 
       - name: Install Dependencies
-        working-directory: ./laharika-kanchanapalli
         run: pip install -r requirements.txt
 
       - name: Run Semgrep (SAST)
@@ -49,7 +48,7 @@ jobs:
         id: build
         uses: docker/build-push-action@v5
         with:
-          context: ./laharika-kanchanapalli
+          context: .
           push: true
           tags: ghcr.io/laharika08/secure-ci-cd-final-demo:${{ github.sha }}
 
