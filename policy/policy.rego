@@ -1,9 +1,9 @@
-package kubernetes.admission
+package main
 
-deny[msg] if {
+deny contains msg if {
   input.kind == "Deployment"
   container := input.spec.template.spec.containers[_]
   endswith(container.image, ":latest")
 
-  msg := sprintf("Container image %s uses the disallowed latest tag.", [container.image])
+  msg := sprintf("Container image %s uses latest tag", [container.image])
 }
