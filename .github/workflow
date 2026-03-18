@@ -1,0 +1,94 @@
+name: Secure CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, laharika-final-secure-cicd ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+jobs:
+  security_checks:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        working-directory: ./laharika-kanchanapalli
+        run: pip install -r requirements.txt
+
+      - name: Run Semgrep (SAST)
+        uses: returntocorp/semgrep-action@v1
+
+      - name: Run Gitleaks (Secrets Scan)
+        uses: gitleaks/gitleaks-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./laharika-kanchanapalli
+          push: true
+          tags: ghcr.io/laharika08/secure-ci-cd-final-demo:latest
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Sign Container Image
+        uses: dodopizza/cosign-sign-push-action@0.0.7
+        with:
+          image-tags: ghcr.io/laharika08/secure-ci-cd-final-demo:latest
+          image-digest: ${{ steps.build.outputs.digest }}
+          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+
+      - name: Run Trivy Image Scan
+        uses: aquasecurity/trivy-action@0.10.0
+        with:
+          image-ref: ghcr.io/laharika08/secure-ci-cd-final-demo:latest
+          severity: HIGH,CRITICAL
+          exit-code: 0
+
+      - name: Set up Conftest
+        uses: princespaghetti/setup-conftest@v1
+
+      - name: Run OPA Policy Check
+        run: conftest test laharika-kanchanapalli/config/deployment.yaml --policy laharika-kanchanapalli/policy
+
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    needs: security_checks
+
+    environment:
+      name: production
+      url: https://example.com
+
+    steps:
+      - name: Deployment placeholder
+        run: |
+          echo "Deploying image to production..."
