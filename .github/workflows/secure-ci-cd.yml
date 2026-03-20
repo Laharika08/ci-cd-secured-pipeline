@@ -64,7 +64,7 @@ jobs:
           cosign-password: ${{ secrets.COSIGN_PASSWORD }}
 
       - name: Run Trivy Scan
-        uses: aquasecurity/trivy-action@0.10.0
+        uses: aquasecurity/trivy-action@v0.20.0
         with:
           image-ref: ghcr.io/laharika08/ci-cd-secured-pipeline:${{ github.sha }}
           severity: HIGH,CRITICAL
